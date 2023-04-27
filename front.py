@@ -6,38 +6,59 @@ from streamlit_modal import Modal
 import streamlit.components.v1 as components
 import requests as rs
 
-body = st.empty()
 
-def wrapper_send_file(up_vid):
-    def send_file():
-        if up_vid is not None:
-            
-            with body:
-                st.spinner("Processando arquivo")
-            
-            vid = {'upvid' : (up_vid.name, up_vid.getvalue())}
-            resp = rs.request( 'POST'
-                                  ,'http://localhost:5000/process'
-                                  , files = vid
-                                  #, stream = True
-                                  )
-            st.session_state.cache_vid = resp.content
+def do_upload():
+    if "up_vid" in st.session_state:
+        uv = st.session_state.up_vid
+        vid = {'up_vid' : (uv.name, uv.getvalue())}
+        resp = rs.request( 'POST'
+                              ,'http://localhost:5000/process'
+                              , files = vid
+                              #, stream = True
+                              )
 
-    return send_file
+        del st.session_state.up_vid
+        st.session_state.processing = False
+        st.session_state.cache_vid = resp.content
+
         
 def clear_vid():
     if "cache_vid" in st.session_state:
         del st.session_state.cache_vid
 
 
-if 'cache_vid' not in st.session_state:
-    with body.container():
-        st.title("Detetcção de Objetos")
-        up_file = st.file_uploader("Escolha o vídeo que deseja processar")
+# I feel i'm in javascript at this point
+def i_hate_python(up_file):
+    def do_thing():
+        st.session_state.up_vid = up_file
+        st.session_state.processing = True
 
-        st.button("Processar arquivo", on_click=wrapper_send_file(up_file))
-else:
-    with body.container():
+    return do_thing
+
+
+body = st.empty()
+
+if "processing" not in st.session_state:
+    st.session_state.processing = False
+
+with body.container():
+    if st.session_state.processing:
+        st.info("Processando o arquivo")
+        
+        # não funciona por algum motivo
+        # st.spinner("Processando arquivo")
+        
+        do_upload()
+        
+        st.session_state.processing = False
+        st.experimental_rerun()
+    
+    elif 'cache_vid' not in st.session_state:
+        st.title("Detecção de Objetos")
+        up_file = st.file_uploader("Escolha o vídeo que deseja processar", key="abc")
+        st.button("Processar arquivo", on_click=i_hate_python(up_file))
+
+    else:
         st.title("Resultado")
         st.video(st.session_state.cache_vid)
 

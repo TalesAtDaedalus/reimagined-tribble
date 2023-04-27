@@ -45,10 +45,10 @@ def process_video(name):
 
 
 @app.post("/process")
-async def handle_video(upvid: UploadFile):
-    newname = "received_" + upvid.filename
+async def handle_video(up_vid: UploadFile):
+    newname = "received_" + up_vid.filename
     with open(newname, 'wb') as f:
-        f.write(upvid.file.read())
+        f.write(up_vid.file.read())
     
     print('file received')
 
